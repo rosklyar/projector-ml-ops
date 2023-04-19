@@ -3,7 +3,7 @@ name: garbage-classifier-ci
 on:
   push:
     branches:
-      - feature/*
+      - main
   pull_request:
     branches: 
       - main

@@ -1,0 +1,12 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: job-garbage-classifier
+spec:
+  parallelism: 2
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: garbage-classifier
+          image: rostyslavskliar/garbage-classifier-webapp:hw-1

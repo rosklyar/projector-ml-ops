@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: garbage-classifier
+spec:
+  containers:
+    - image: rostyslavskliar/garbage-classifier-webapp:hw-1
+      name: garbage-classifier
