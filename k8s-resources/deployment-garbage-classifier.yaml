@@ -1,0 +1,30 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-garbage-classifier
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: deployment-garbage-classifier
+  template:
+    metadata:
+      labels:
+        app: deployment-garbage-classifier
+    spec:
+      containers:
+        - name: deployment-garbage-classifier
+          image: rostyslavskliar/garbage-classifier-webapp:hw-1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-garbage-classifier
+spec:
+  selector:
+    app: deployment-garbage-classifier
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
