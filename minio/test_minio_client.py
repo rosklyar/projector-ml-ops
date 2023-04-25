@@ -33,3 +33,9 @@ def test_download_file(minio_client: MinioClientNative):
     minio_client.download_file('test_download_file', Path('minio/README-downloaded.md'))
     assert Path('minio/README.md').read_text() == Path('minio/README-downloaded.md').read_text()
     Path('minio/README-downloaded.md').unlink()
+
+def test_delete_file(minio_client: MinioClientNative):
+    minio_client.upload_file('test_delete_file', Path('minio/README.md'))
+    minio_client.delete_file('test_delete_file')
+    with pytest.raises(S3Error):
+        minio_client.file_exists('test_delete_file')

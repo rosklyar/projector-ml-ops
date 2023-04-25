@@ -1,5 +1,6 @@
 from pathlib import Path
 from minio import Minio
+from minio.commonconfig import Tags
 
 
 class MinioClientNative:
@@ -11,8 +12,8 @@ class MinioClientNative:
         if not client.bucket_exists(bucket_name):
             client.make_bucket(bucket_name)
 
-    def upload_file(self, key: str, file_path: Path, tags: dict = None):        
-        self.client.fput_object(self.bucket_name, key, str(file_path), tags=tags)
+    def upload_file(self, key: str, file_path: Path):     
+        return self.client.fput_object(self.bucket_name, key, str(file_path))
 
     def download_file(self, key: str, file_path: Path):
         return self.client.fget_object(bucket_name=self.bucket_name, object_name=key, file_path=str(file_path))
@@ -21,4 +22,4 @@ class MinioClientNative:
         return self.client.stat_object(bucket_name=self.bucket_name, object_name=key)
 
     def delete_file(self, key: str):
-        self.client.remove_object(bucket_name=self.bucket_name, object_name=key)
+        return self.client.remove_object(bucket_name=self.bucket_name, object_name=key)
