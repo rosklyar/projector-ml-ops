@@ -1,0 +1,5 @@
+outs:
+- md5: bb4c3396cd6eb768a591ee5cd3ad8555.dir
+  size: 250508234
+  nfiles: 15515
+  path: kaggle-ds
