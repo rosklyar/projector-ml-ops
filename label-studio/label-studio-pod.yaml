@@ -1,0 +1,31 @@
+# Label studio
+apiVersion: v1
+kind: Pod
+metadata:
+  name: label-studio
+spec:
+  containers:
+    - image: heartexlabs/label-studio:latest
+      name: label-studio
+      ports:
+        - containerPort: 8080
+          name: label-studio
+          protocol: TCP
+      volumeMounts:
+        - mountPath: /label-studio/data
+          name: label-studio-data
+  volumes:  
+    - name: label-studio-data
+      persistentVolumeClaim:
+        claimName: label-studio-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: label-studio-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
