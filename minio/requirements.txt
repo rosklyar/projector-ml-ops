@@ -1,0 +1,4 @@
+minio==7.1.14
+pytest==7.3.1
+testcontainers==3.7.1
+testcontainers_minio==0.0.1rc1
