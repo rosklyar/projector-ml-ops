@@ -1,4 +1,4 @@
-name: minio-functional-tests
+name: pandas-benchmarking
 
 on:
   push:
@@ -29,9 +29,9 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        if [ -f minio/requirements.txt ]; then pip install -r minio/requirements.txt; fi
+        if [ -f pandas-benchmarks/requirements.txt ]; then pip install -r pandas-benchmarks/requirements.txt; fi
 
     - name: Run pytest
       run: |
-        pytest minio
+        pytest pandas-benchmarks
 
