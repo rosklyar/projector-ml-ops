@@ -33,7 +33,7 @@ def train_model(config=None):
         # optimizer
         optimizer = get_optimizer(model, config.optimizer, config.lr)
         f1_score = 0
-
+        avg_loss = 0
         for epoch in range(config.epochs):
             print(f'Epoch {epoch} started...')
             avg_loss = train_epoch(model, train_dataloader, optimizer, opt.device)
@@ -107,7 +107,7 @@ def create_card(config, f1_score):
         limitations
     )
 
-    filename = "garbage-classifier/README.md"
+    filename = "garbage_classifier/README.md"
     save_model_card(filename, model_card)
 
 
