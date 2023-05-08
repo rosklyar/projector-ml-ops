@@ -11,9 +11,9 @@ import wandb
 
 from transformers import BeitForImageClassification
 
-from garbage_data import GarbageData
-from config import config as opt
-from model_card import create_model_card, save_model_card
+from garbage_classifier.garbage_data import GarbageData
+from garbage_classifier.config import config as opt
+from garbage_classifier.model_card import create_model_card, save_model_card
 
 random.seed(42)
 np.random.seed(42)
@@ -65,7 +65,7 @@ def train_epoch(epoch, model, dataloader, optimizer):
     return cumu_loss / len(dataloader)
 
 
-def get_model(dropout_rate, fc_layer_size):
+def get_model(dropout_rate, fc_layer_size, device=opt.device):
     model = BeitForImageClassification.from_pretrained(
         'microsoft/beit-base-patch16-224-pt22k-ft22k')
 
@@ -75,7 +75,8 @@ def get_model(dropout_rate, fc_layer_size):
     model.classifier = torch.nn.Sequential(*layers)
 
     model.config.num_labels = opt.classes
-    model.to(opt.device)
+    model.to(device)
+    
     return model
 
 
