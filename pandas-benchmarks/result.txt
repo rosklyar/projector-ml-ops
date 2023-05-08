@@ -1,0 +1,10 @@
+Format - Save time in sec / Load time in sec / Size in MB
+csv - 0.15s / 1.07s / 18.47
+parquet - 0.02s / 0.10s / 9.67
+feather - 0.01s / 0.01s / 7.64
+pickle - 0.01s / 0.01s / 7.63
+npy - 0.01s / 0.00s / 7.63
+hdf5 - 0.02s / 0.05s / 8.40
+json - 0.53s / 0.17s / 19.82
+h5netcdf - 0.06s / 0.04s / 8.40
+excel - 9.08s / 13.20s / 12.23
