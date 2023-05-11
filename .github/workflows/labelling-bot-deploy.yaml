@@ -27,7 +27,7 @@ jobs:
           context: labelling-bot/
           file: labelling-bot/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.IMAGE_WEBAPP }}:latest
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.IMAGE_LABELLING_BOT }}:latest
       - name: Docker pull and run from Hub
         uses: appleboy/ssh-action@master
         with:
