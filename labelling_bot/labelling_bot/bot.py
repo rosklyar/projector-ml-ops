@@ -61,7 +61,7 @@ async def callback(update: Update, context: CallbackContext):
         photo = await context.bot.get_file(photo_id)
         file_path = str(uuid.uuid4()) + ".jpg"
         await photo.download_to_drive(file_path)
-        await s3.upload_file(file_path, BUCKET_NAME, f'testing/{label}/{file_path}')
+        s3.upload_file(file_path, BUCKET_NAME, f'testing/{label}/{file_path}')
         await delete_file(file_path)
         await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Фото збережено. Відправте нове фото. Якщо бажаєте відправити нову категорію - натисніть \n/category.")
 
