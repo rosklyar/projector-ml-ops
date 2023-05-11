@@ -48,9 +48,9 @@ jobs:
               sudo service docker start
             fi
             
-            docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.IMAGE_LABELLING_BOT }}:latest
-            docker stop ${{ env.IMAGE_LABELLING_BOT }} || true
-            docker rm ${{ env.IMAGE_LABELLING_BOT }} || true
-            docker run -d --name ${{ env.IMAGE_LABELLING_BOT }} ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.IMAGE_WEBAPP }}:latest
+            sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.IMAGE_LABELLING_BOT }}:latest
+            sudo docker stop ${{ env.IMAGE_LABELLING_BOT }} || true
+            sudo docker rm ${{ env.IMAGE_LABELLING_BOT }} || true
+            sudo docker run -d --name ${{ env.IMAGE_LABELLING_BOT }} ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.IMAGE_WEBAPP }}:latest
 
 
