@@ -24,8 +24,8 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
-          context: labelling-bot/
-          file: labelling-bot/Dockerfile
+          context: labelling_bot/
+          file: labelling_bot/Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.IMAGE_LABELLING_BOT }}:latest
       - name: Docker pull and run from Hub
