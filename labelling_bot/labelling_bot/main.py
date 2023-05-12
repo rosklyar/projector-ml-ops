@@ -5,7 +5,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandle
 from bot import category, help, callback, make_photo, label_selected
 
 def main():
-    api_token = os.getenv("API_TOKEN") or "6287751498:AAFIzaYd8JC0RLPymmMoD8lzBVNUh_wzQSM"
+    api_token = os.getenv("API_TOKEN")
     
     application = ApplicationBuilder().token(api_token).build()
     
