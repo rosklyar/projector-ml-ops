@@ -6,7 +6,7 @@ import os
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
 from telegram.ext import CallbackContext
 
-from config import LABELS, BUCKET_NAME
+from config import LABELS, BUCKET_NAME, ROOT_FOLDER
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
@@ -14,6 +14,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 s3 = boto3.client('s3')
+
+# upload config.json to s3
+s3.upload_file('config.json', BUCKET_NAME, f'{ROOT_FOLDER}/config.json')
 
 async def help(update: Update, context: CallbackContext):
     instructions_text = "Інструкція по використанню:\n" \
@@ -61,7 +64,7 @@ async def callback(update: Update, context: CallbackContext):
         photo = await context.bot.get_file(photo_id)
         file_path = str(uuid.uuid4()) + ".jpg"
         await photo.download_to_drive(file_path)
-        s3.upload_file(file_path, BUCKET_NAME, f'testing/{label}/{file_path}')
+        s3.upload_file(file_path, BUCKET_NAME, f'{ROOT_FOLDER}/{label}/{file_path}')
         await delete_file(file_path)
         await context.bot.send_message(chat_id=update.effective_chat.id, text=f"Фото збережено. Відправте нове фото. Якщо бажаєте відправити нову категорію - натисніть \n/category.")
 

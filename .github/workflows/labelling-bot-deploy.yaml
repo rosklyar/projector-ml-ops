@@ -3,7 +3,7 @@ name: labelling-bot-deploy
 on:
   push:
     branches:
-      - feature/*
+      - feature/labelling-bot
 
 env:
   IMAGE_LABELLING_BOT: labelling-bot
@@ -55,7 +55,7 @@ jobs:
               sudo docker rm ${{ env.IMAGE_LABELLING_BOT }}
             fi
 
-            sudo docker run -d --name ${{ env.IMAGE_LABELLING_BOT }} ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.IMAGE_LABELLING_BOT }}:latest
+            sudo docker run -e API_TOKEN=${{ secrets.LABELLING_BOT_API_TOKEN }} -d --name ${{ env.IMAGE_LABELLING_BOT }} ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.IMAGE_LABELLING_BOT }}:latest
 
 
 

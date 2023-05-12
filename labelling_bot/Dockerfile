@@ -1,11 +1,15 @@
 FROM python:3.9-slim-buster
 
-WORKDIR /labelling_bot
+RUN useradd --create-home appuser
 
-COPY ./requirements.txt /labelling_bot/requirements.txt
+WORKDIR /home/appuser/labelling_bot
 
-RUN pip install --no-cache-dir --upgrade -r /labelling_bot/requirements.txt
+USER appuser
 
-COPY ./labelling_bot /labelling_bot/labelling_bot
+COPY ./requirements.txt /home/appuser/labelling_bot/requirements.txt
 
-CMD ["python", "labelling_bot/main.py"]
+RUN pip install --no-cache-dir --upgrade -r /home/appuser/labelling_bot/requirements.txt
+
+COPY ./labelling_bot /home/appuser/labelling_bot
+
+CMD ["python", "main.py"]
