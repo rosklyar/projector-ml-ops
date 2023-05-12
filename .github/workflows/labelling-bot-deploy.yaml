@@ -3,7 +3,9 @@ name: labelling-bot-deploy
 on:
   push:
     branches:
-      - feature/labelling-bot
+      - main
+    paths:
+      - labelling_bot/**
 
 env:
   IMAGE_LABELLING_BOT: labelling-bot
