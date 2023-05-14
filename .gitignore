@@ -129,6 +129,9 @@ dmypy.json
 .pyre/
 .vscode/
 data/kaggle-ds/
+data/real-ds/
 model/model.pth
 model/checkpoints
 wandb/
+test.tar.gz
+train.tar.gz
