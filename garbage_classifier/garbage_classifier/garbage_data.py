@@ -57,7 +57,7 @@ class GarbageData():
 
     def get_test_loader(self):
         return self._test_loader
-    
+
 def load_train_data(s3_access_key, s3_secret_key, s3_bucket, s3_prefix):
     s3_client = boto3.client('s3', aws_access_key_id=s3_access_key, aws_secret_access_key=s3_secret_key)
     folder = 'data/real-ds'
@@ -71,7 +71,7 @@ def load_data(s3_access_key, s3_secret_key, s3_bucket, s3_prefix):
     folder = 'data/tmp'
     _download_files_from_s3_bucket_folder(s3_client, s3_bucket, s3_prefix, f'{folder}')
     _create_tar_gz_folder(f'{folder}', 'data/data.tar.gz')
-    
+
 def _create_train_test_split(src_folder, train_folder, test_folder):
     class_folders = [f for f in os.listdir(src_folder) if os.path.isdir(os.path.join(src_folder, f))]
 
@@ -151,4 +151,3 @@ def extract_tar_gz(archive_path):
         print(f"Error handling the archive '{archive_path}': {e}")
     except Exception as e:
         print(f"An unexpected error occurred while extracting '{archive_path}': {e}")
-        

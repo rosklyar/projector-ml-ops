@@ -3,7 +3,6 @@ import torch
 import torch.nn.functional as F
 from torch.optim import SGD, Adam
 
-
 def get_optimizer(model, optimizer, lr):
     if optimizer == "sgd":
         optimizer = SGD(model.parameters(),
