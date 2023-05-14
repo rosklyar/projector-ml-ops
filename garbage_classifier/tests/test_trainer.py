@@ -1,6 +1,6 @@
 import pytest
 import torch
-from garbage_classifier import trainer as t, model as m
+from garbage_classifier import model_utils as m, trainer as t
 from garbage_classifier import garbage_data as gd
 
 

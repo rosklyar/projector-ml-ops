@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from garbage_classifier import model as m
+from garbage_classifier import model_utils as m
 from garbage_classifier import garbage_data as gd
 
 
