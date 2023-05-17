@@ -1,0 +1,116 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: garbage-classifier-inference-pipeline-
+  annotations: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.21, pipelines.kubeflow.org/pipeline_compilation_time: '2023-05-17T19:55:28.571014',
+    pipelines.kubeflow.org/pipeline_spec: '{"description": "Pipeline for inference
+      data with garbage classifier", "inputs": [{"name": "s3_access_key"}, {"name":
+      "s3_secret_key"}, {"name": "s3_bucket"}, {"name": "s3_prefix"}, {"name": "wandb_api_key"},
+      {"name": "model_name"}, {"name": "model_version"}], "name": "garbage_classifier_inference_pipeline"}'}
+  labels: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.21}
+spec:
+  entrypoint: garbage-classifier-inference-pipeline
+  templates:
+  - name: download-model
+    container:
+      command: [python, garbage_classifier/cli.py, download-from-registry, '{{inputs.parameters.model_name}}',
+        '{{inputs.parameters.model_version}}']
+      env:
+      - {name: WANDB_PROJECT, value: garbage-classifier}
+      - {name: WANDB_API_KEY, value: '{{inputs.parameters.wandb_api_key}}'}
+      image: rostyslavskliar/garbage-classifier-trainer:latest
+    inputs:
+      parameters:
+      - {name: model_name}
+      - {name: model_version}
+      - {name: wandb_api_key}
+    outputs:
+      artifacts:
+      - {name: download-model-model, path: artifacts/uwg-garbage-classifier-ruzqtilr-v0/model.pth}
+    metadata:
+      labels:
+        pipelines.kubeflow.org/kfp_sdk_version: 1.8.21
+        pipelines.kubeflow.org/pipeline-sdk-type: kfp
+        pipelines.kubeflow.org/enable_caching: "true"
+  - name: garbage-classifier-inference-pipeline
+    inputs:
+      parameters:
+      - {name: model_name}
+      - {name: model_version}
+      - {name: s3_access_key}
+      - {name: s3_bucket}
+      - {name: s3_prefix}
+      - {name: s3_secret_key}
+      - {name: wandb_api_key}
+    dag:
+      tasks:
+      - name: download-model
+        template: download-model
+        arguments:
+          parameters:
+          - {name: model_name, value: '{{inputs.parameters.model_name}}'}
+          - {name: model_version, value: '{{inputs.parameters.model_version}}'}
+          - {name: wandb_api_key, value: '{{inputs.parameters.wandb_api_key}}'}
+      - name: load-data
+        template: load-data
+        arguments:
+          parameters:
+          - {name: s3_access_key, value: '{{inputs.parameters.s3_access_key}}'}
+          - {name: s3_bucket, value: '{{inputs.parameters.s3_bucket}}'}
+          - {name: s3_prefix, value: '{{inputs.parameters.s3_prefix}}'}
+          - {name: s3_secret_key, value: '{{inputs.parameters.s3_secret_key}}'}
+      - name: upload-model
+        template: upload-model
+        dependencies: [download-model, load-data]
+        arguments:
+          artifacts:
+          - {name: download-model-model, from: '{{tasks.download-model.outputs.artifacts.download-model-model}}'}
+          - {name: load-data-data, from: '{{tasks.load-data.outputs.artifacts.load-data-data}}'}
+  - name: load-data
+    container:
+      command: [python, garbage_classifier/cli.py, load-data, '{{inputs.parameters.s3_access_key}}',
+        '{{inputs.parameters.s3_secret_key}}', '{{inputs.parameters.s3_bucket}}',
+        '{{inputs.parameters.s3_prefix}}']
+      image: rostyslavskliar/garbage-classifier-trainer:latest
+    inputs:
+      parameters:
+      - {name: s3_access_key}
+      - {name: s3_bucket}
+      - {name: s3_prefix}
+      - {name: s3_secret_key}
+    outputs:
+      artifacts:
+      - {name: load-data-data, path: data/data.tar.gz}
+    metadata:
+      labels:
+        pipelines.kubeflow.org/kfp_sdk_version: 1.8.21
+        pipelines.kubeflow.org/pipeline-sdk-type: kfp
+        pipelines.kubeflow.org/enable_caching: "true"
+      annotations: {pipelines.kubeflow.org/max_cache_staleness: P0D}
+  - name: upload-model
+    container:
+      command: [python, garbage_classifier/cli.py, make-inference, model/model.pth,
+        data/data.tar.gz]
+      image: rostyslavskliar/garbage-classifier-trainer:latest
+    inputs:
+      artifacts:
+      - {name: load-data-data, path: data/data.tar.gz}
+      - {name: download-model-model, path: model/model.pth}
+    outputs:
+      artifacts:
+      - {name: upload-model-result, path: result.csv}
+    metadata:
+      labels:
+        pipelines.kubeflow.org/kfp_sdk_version: 1.8.21
+        pipelines.kubeflow.org/pipeline-sdk-type: kfp
+        pipelines.kubeflow.org/enable_caching: "true"
+  arguments:
+    parameters:
+    - {name: s3_access_key}
+    - {name: s3_secret_key}
+    - {name: s3_bucket}
+    - {name: s3_prefix}
+    - {name: wandb_api_key}
+    - {name: model_name}
+    - {name: model_version}
+  serviceAccountName: pipeline-runner

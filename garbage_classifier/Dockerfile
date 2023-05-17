@@ -1,4 +1,4 @@
-FROM huggingface/transformers-pytorch-gpu:4.22.1
+FROM python:3.9-slim-buster
 
 WORKDIR /app
 

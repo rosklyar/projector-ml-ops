@@ -7,7 +7,6 @@ from torchvision import torch, transforms
 from torchvision.datasets import ImageFolder
 from transformers import BeitFeatureExtractor
 from torch.utils.data import Dataset, DataLoader
-from torch.utils.data import random_split
 
 class FeatureExtractor(torch.nn.Module):
     
@@ -59,13 +58,19 @@ class GarbageData():
     def get_test_loader(self):
         return self._test_loader
     
-def load_data(s3_access_key, s3_secret_key, s3_bucket, s3_prefix):
+def load_train_data(s3_access_key, s3_secret_key, s3_bucket, s3_prefix):
     s3_client = boto3.client('s3', aws_access_key_id=s3_access_key, aws_secret_access_key=s3_secret_key)
     folder = 'data/real-ds'
     _download_files_from_s3_bucket_folder(s3_client, s3_bucket, s3_prefix, f'{folder}/input')
     _create_train_test_split(f'{folder}/input', f'{folder}/train', f'{folder}/test')
     _create_tar_gz_folder(f'{folder}/train', 'data/real-ds/train.tar.gz')
     _create_tar_gz_folder(f'{folder}/test', 'data/real-ds/test.tar.gz')
+
+def load_data(s3_access_key, s3_secret_key, s3_bucket, s3_prefix):
+    s3_client = boto3.client('s3', aws_access_key_id=s3_access_key, aws_secret_access_key=s3_secret_key)
+    folder = 'data/tmp'
+    _download_files_from_s3_bucket_folder(s3_client, s3_bucket, s3_prefix, f'{folder}')
+    _create_tar_gz_folder(f'{folder}', 'data/data.tar.gz')
     
 def _create_train_test_split(src_folder, train_folder, test_folder):
     class_folders = [f for f in os.listdir(src_folder) if os.path.isdir(os.path.join(src_folder, f))]
@@ -113,4 +118,32 @@ def _download_files_from_s3_bucket_folder(s3, bucket_name, folder_path, local_de
                 print(f'Downloading {file_key} to {local_file_path}')
                 s3.download_file(bucket_name, file_key, local_file_path)
                 print(f'Downloaded {file_key} to {local_file_path}')
+
+def extract_tar_gz(archive_path):
+    if not os.path.exists(archive_path):
+        print(f"The file '{archive_path}' does not exist.")
+        return None
+
+    if not tarfile.is_tarfile(archive_path):
+        print(f"The file '{archive_path}' is not a valid tar archive.")
+        return None
+
+    # Create a unique directory for the extracted files
+    extracted_folder = os.path.splitext(
+        os.path.splitext(os.path.basename(archive_path))[0])[0]
+    extracted_path = os.path.join(
+        os.path.dirname(archive_path), extracted_folder)
+
+    if not os.path.exists(extracted_path):
+        os.makedirs(extracted_path)
+
+    try:
+        with tarfile.open(archive_path, 'r:gz') as tar:
+            tar.extractall(path=extracted_path)
+            print(
+                f"Successfully extracted '{archive_path}' to '{extracted_path}'.")
+            return extracted_path
+    except Exception as e:
+        print(f"Error while extracting '{archive_path}': {e}")
+        return None
     

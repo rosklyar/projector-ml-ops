@@ -1,11 +1,11 @@
 {
-    "train_path": "./data/real-ds/train.tar.gz",
-    "test_path": "./data/real-ds/test.tar.gz",
+    "train_path": "data/real-ds/train.tar.gz",
+    "test_path": "data/real-ds/test.tar.gz",
     "batch_size" : 16,
     "epochs" : 1,
     "learning_rate" : 0.008,
     "optimizer" : "sgd",
     "fc_layer_size" : 512,
     "dropout" : 0.1,
-    "model_dir" : "./model"
+    "model_dir" : "model"
   }

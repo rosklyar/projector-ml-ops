@@ -8,7 +8,7 @@ from garbage_classifier import garbage_data as gd
 @pytest.fixture
 def garbage_data():
     return gd.GarbageData(
-        "garbage_classifier/tests/data", 2, 0.2)
+        "garbage_classifier/tests/data", "garbage_classifier/tests/data", 2)
 
 def test_model_creation():
     model = m.get_model('microsoft/beit-base-patch16-224-pt22k-ft22k', 0.1, 512, 6)
@@ -17,5 +17,5 @@ def test_model_creation():
 
 def test_model_scoring(garbage_data: gd.GarbageData):
     model = m.get_model('microsoft/beit-base-patch16-224-pt22k-ft22k', 0.1, 512, 6)
-    score = m.score_model(model, garbage_data.get_val_loader())
+    score = m.score_model(model, garbage_data.get_test_loader())
     assert score >= 0   
