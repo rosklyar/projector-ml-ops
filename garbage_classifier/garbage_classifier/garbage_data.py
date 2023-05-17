@@ -71,7 +71,7 @@ def load_data(s3_access_key, s3_secret_key, s3_bucket, s3_prefix):
     folder = 'data/tmp'
     _download_files_from_s3_bucket_folder(s3_client, s3_bucket, s3_prefix, f'{folder}')
     _create_tar_gz_folder(f'{folder}', 'data/data.tar.gz')
-
+    
 def _create_train_test_split(src_folder, train_folder, test_folder):
     class_folders = [f for f in os.listdir(src_folder) if os.path.isdir(os.path.join(src_folder, f))]
 

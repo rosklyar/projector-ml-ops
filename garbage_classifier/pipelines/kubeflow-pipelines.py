@@ -9,48 +9,29 @@ from kubernetes.client.models import V1EnvVar
 IMAGE = "rostyslavskliar/garbage-classifier-trainer:latest"
 
 
-@dsl.pipeline(
-    name="garbage_classifier_traininig_pipeline",
-    description="Pipeline for training garbage classifier from scratch",
-)
-def garbage_classifier_traininig_pipeline(
-    s3_access_key, s3_secret_key, s3_bucket, s3_prefix, wandb_api_key
-):
+@dsl.pipeline(name="garbage_classifier_traininig_pipeline", description="Pipeline for training garbage classifier from scratch")
+def garbage_classifier_traininig_pipeline(s3_access_key, s3_secret_key, s3_bucket, s3_prefix, wandb_api_key):
+
     load_data = dsl.ContainerOp(
         name="load_data",
-        command=[
-            "python",
-            "garbage_classifier/cli.py",
-            "load-train-data",
-            s3_access_key,
-            s3_secret_key,
-            s3_bucket,
-            s3_prefix,
-        ],
+        command=["python", "garbage_classifier/cli.py", "load-train-data",
+                 s3_access_key, s3_secret_key, s3_bucket, s3_prefix],
         image=IMAGE,
-        file_outputs={
-            "train": "data/real-ds/train.tar.gz",
-            "test": "data/real-ds/test.tar.gz",
-        },
+        file_outputs={"train": "data/real-ds/train.tar.gz",
+                      "test": "data/real-ds/test.tar.gz"},
     )
     load_data.execution_options.caching_strategy.max_cache_staleness = "P0D"
 
     train_model = dsl.ContainerOp(
         name="train",
-        command=[
-            "python",
-            "garbage_classifier/cli.py",
-            "train",
-            "garbage_classisier/data/config.json",
-        ],
+        command=["python", "garbage_classifier/cli.py",
+                 "train", "garbage_classisier/data/config.json"],
         image=IMAGE,
         artifact_argument_paths=[
             dsl.InputArgumentPath(
-                load_data.outputs["train"], path="data/real-ds/train.tar.gz"
-            ),
+                load_data.outputs["train"], path="data/real-ds/train.tar.gz"),
             dsl.InputArgumentPath(
-                load_data.outputs["test"], path="data/real-ds/test.tar.gz"
-            ),
+                load_data.outputs["test"], path="data/real-ds/test.tar.gz")
         ],
         file_outputs={
             "config": "data/config.json",
@@ -61,24 +42,16 @@ def garbage_classifier_traininig_pipeline(
 
     upload_model = dsl.ContainerOp(
         name="upload_model ",
-        command=[
-            "python",
-            "garbage_classifier/cli.py",
-            "upload-to-registry",
-            "garbage-classifier-kf",
-            "tmp/results",
-        ],
+        command=["python", "garbage_classifier/cli.py",
+                 "upload-to-registry", "garbage-classifier-kf", "tmp/results"],
         image=IMAGE,
         artifact_argument_paths=[
             dsl.InputArgumentPath(
-                train_model.outputs["config"], path="tmp/results/config.json"
-            ),
+                train_model.outputs["config"], path="tmp/results/config.json"),
             dsl.InputArgumentPath(
-                train_model.outputs["model"], path="tmp/results/model.pth"
-            ),
+                train_model.outputs["model"], path="tmp/results/model.pth"),
             dsl.InputArgumentPath(
-                train_model.outputs["model_card"], path="tmp/results/README.md"
-            ),
+                train_model.outputs["model_card"], path="tmp/results/README.md"),
         ],
     )
 
@@ -90,31 +63,13 @@ def garbage_classifier_traininig_pipeline(
     train_model = train_model.add_env_variable(env_var_password)
     upload_model = upload_model.add_env_variable(env_var_password)
 
+@dsl.pipeline(name="garbage_classifier_inference_pipeline", description="Pipeline for inference data with garbage classifier")
+def garbage_classifier_inference_pipeline(s3_access_key, s3_secret_key, s3_bucket, s3_prefix, wandb_api_key, model_name, model_version):
 
-@dsl.pipeline(
-    name="garbage_classifier_inference_pipeline",
-    description="Pipeline for inference data with garbage classifier",
-)
-def garbage_classifier_inference_pipeline(
-    s3_access_key,
-    s3_secret_key,
-    s3_bucket,
-    s3_prefix,
-    wandb_api_key,
-    model_name,
-    model_version,
-):
     load_data = dsl.ContainerOp(
         name="load_data",
-        command=[
-            "python",
-            "garbage_classifier/cli.py",
-            "load-data",
-            s3_access_key,
-            s3_secret_key,
-            s3_bucket,
-            s3_prefix,
-        ],
+        command=["python", "garbage_classifier/cli.py", "load-data",
+                 s3_access_key, s3_secret_key, s3_bucket, s3_prefix],
         image=IMAGE,
         file_outputs={"data": "data/data.tar.gz"},
     )
@@ -122,13 +77,8 @@ def garbage_classifier_inference_pipeline(
 
     download_model = dsl.ContainerOp(
         name="download_model",
-        command=[
-            "python",
-            "garbage_classifier/cli.py",
-            "download-from-registry",
-            model_name,
-            model_version,
-        ],
+        command=["python", "garbage_classifier/cli.py",
+                 "download-from-registry", model_name, model_version],
         image=IMAGE,
         file_outputs={
             "model": "artifacts/uwg-garbage-classifier-ruzqtilr-v0/model.pth"
@@ -143,23 +93,19 @@ def garbage_classifier_inference_pipeline(
 
     inference = dsl.ContainerOp(
         name="upload_model",
-        command=[
-            "python",
-            "garbage_classifier/cli.py",
-            "make-inference",
-            "model/model.pth",
-            "data/data.tar.gz",
-        ],
+        command=["python", "garbage_classifier/cli.py",
+                 "make-inference", "model/model.pth", "data/data.tar.gz"],
         image=IMAGE,
         artifact_argument_paths=[
-            dsl.InputArgumentPath(load_data.outputs["data"], path="data/data.tar.gz"),
             dsl.InputArgumentPath(
-                download_model.outputs["model"], path="model/model.pth"
-            ),
+                load_data.outputs["data"], path="data/data.tar.gz"),
+            dsl.InputArgumentPath(
+                download_model.outputs["model"], path="model/model.pth")
         ],
-        file_outputs={"result": "result.csv"},
+        file_outputs={
+            "result": "result.csv"
+        },
     )
-
 
 def compile_pipeline(name: str, function) -> str:
     path = f".\garbage_classifier\pipelines\{name}-pipeline.yaml"
@@ -174,7 +120,8 @@ def create_pipeline(client: kfp.Client, namespace: str, name: str, function):
     print("Uploading pipeline...")
     if client.get_pipeline_id(name) is not None:
         print("Pipeline exists - upload new version...")
-        pipeline_prev_version = client.get_pipeline(client.get_pipeline_id(name))
+        pipeline_prev_version = client.get_pipeline(
+            client.get_pipeline_id(name))
         version_name = f"{name}-{uuid.uuid4()}"
         pipeline = client.upload_pipeline_version(
             pipeline_package_path=compile_pipeline(name, function),
@@ -183,8 +130,7 @@ def create_pipeline(client: kfp.Client, namespace: str, name: str, function):
         )
     else:
         pipeline = client.upload_pipeline(
-            pipeline_package_path=compile_pipeline(name, function), pipeline_name=name
-        )
+            pipeline_package_path=compile_pipeline(name, function), pipeline_name=name)
     print(f"Pipeline {pipeline.id}")
 
 
@@ -193,18 +139,8 @@ def auto_create_pipelines(
     namespace: Optional[str] = None,
 ):
     client = kfp.Client(host=host)
-    create_pipeline(
-        client=client,
-        namespace=namespace,
-        name="garbage-classifier-training",
-        function=garbage_classifier_traininig_pipeline,
-    )
-    create_pipeline(
-        client=client,
-        namespace=namespace,
-        name="garbage-classifier-inference",
-        function=garbage_classifier_inference_pipeline,
-    )
+    create_pipeline(client=client, namespace=namespace, name="garbage-classifier-training", function=garbage_classifier_traininig_pipeline)
+    create_pipeline(client=client, namespace=namespace, name="garbage-classifier-inference", function=garbage_classifier_inference_pipeline)
 
 
 if __name__ == "__main__":
