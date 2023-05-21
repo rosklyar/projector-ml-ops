@@ -1,4 +1,4 @@
-name: minio-functional-tests
+name: garbage-classifier-tests
 
 on:
   push:
@@ -15,7 +15,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [3.7, 3.8]
+        python-version: [3.9]
 
     steps:
     - name: Check out repository
@@ -29,9 +29,10 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        if [ -f minio_client/requirements.txt ]; then pip install -r minio_client/requirements.txt; fi
+        if [ -f garbage_classifier/requirements.txt ]; then pip install -r garbage_classifier/requirements.txt; fi
 
     - name: Run pytest
       run: |
-        pytest minio_client
+        pytest garbage_classifier
+
 

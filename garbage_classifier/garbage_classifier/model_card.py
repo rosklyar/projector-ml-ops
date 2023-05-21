@@ -23,7 +23,7 @@ def create_model_card(model_name, model_description, data_details, preprocessing
 
 #### Training System Hardware
 - GPU: {torch.cuda.device_count()}
-- GPU type: {torch.cuda.get_device_name(0)}
+- GPU type: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'N/A'}
 - CPU: {psutil.cpu_count()}
 
 ## Evaluation

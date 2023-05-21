@@ -1,92 +1,19 @@
 import random
 from os.path import join
 import numpy as np
-from tqdm import tqdm
-
-from sklearn.metrics import f1_score as measure_f1_score
-import torch.nn.functional as F
-from torch.optim import Adam, SGD
 import torch
 import wandb
 
-from transformers import BeitForImageClassification
-
-from garbage_data import GarbageData
-from config import config as opt
-from model_card import create_model_card, save_model_card
+from garbage_classifier.garbage_data import GarbageData
+from garbage_classifier.config import config as opt
+from garbage_classifier.model_card import create_model_card, save_model_card
+from garbage_classifier.model import get_model, score_model
+from garbage_classifier.trainer import get_optimizer, train_epoch
 
 random.seed(42)
 np.random.seed(42)
 torch.manual_seed(42)
 torch.cuda.manual_seed_all(42)
-
-
-def score_model(model, dataloader):
-    """
-    :param model:
-    :param dataloader:
-    :return:
-        res: f1_score
-    """
-    print('Model scoring was started...')
-    model.eval()
-    dataloader.dataset.mode = 'eval'
-    result = []
-    targets = []
-    with torch.no_grad():
-        for _, batch in tqdm(enumerate(dataloader)):
-            frames = torch.squeeze(batch[0]['pixel_values']).to(opt.device)
-            labels = batch[1].to(opt.device)
-            predicted = model(frames)
-            predicted = predicted.logits.argmax(dim=-1)
-            result.extend(predicted.cpu().numpy().tolist())
-            targets.extend(labels.cpu().numpy().tolist())
-    f1_score = measure_f1_score(targets, result, average='macro')
-    return f1_score
-
-
-def train_epoch(epoch, model, dataloader, optimizer):
-    print(f'Start {epoch + 1} epoch')
-    cumu_loss = 0
-    for _, batch in tqdm(enumerate(dataloader)):
-        frames, labels = torch.squeeze(batch[0]['pixel_values']).to(
-            opt.device), batch[1].to(opt.device)
-        optimizer.zero_grad()
-
-        # forward pass
-        loss = F.cross_entropy(model(frames).logits, labels)
-        cumu_loss += loss.item()
-
-        # backward pass
-        loss.backward()
-        optimizer.step()
-
-        wandb.log({'batch_loss': loss.item()})
-    return cumu_loss / len(dataloader)
-
-
-def get_model(dropout_rate, fc_layer_size):
-    model = BeitForImageClassification.from_pretrained(
-        'microsoft/beit-base-patch16-224-pt22k-ft22k')
-
-    layers = [torch.nn.Linear(768, fc_layer_size), torch.nn.Dropout(
-        dropout_rate), torch.nn.Linear(fc_layer_size, opt.classes)]
-
-    model.classifier = torch.nn.Sequential(*layers)
-
-    model.config.num_labels = opt.classes
-    model.to(opt.device)
-    return model
-
-
-def get_optimizer(model, optimizer, lr):
-    if optimizer == "sgd":
-        optimizer = SGD(model.parameters(),
-                        lr=lr, momentum=0.9)
-    elif optimizer == "adam":
-        optimizer = Adam(model.parameters(),
-                         lr=lr)
-    return optimizer
 
 
 def train_model(config=None):
@@ -100,21 +27,30 @@ def train_model(config=None):
         val_dataloader = garbage_data.get_val_loader()
 
         # model
-        model = get_model(config.dropout, config.fc_layer_size)
+        model = get_model(config.dropout, config.fc_layer_size, opt.classes)
+        model.to(opt.device)
 
         # optimizer
         optimizer = get_optimizer(model, config.optimizer, config.lr)
         f1_score = 0
-
+        avg_loss = 0
         for epoch in range(config.epochs):
-            avg_loss = train_epoch(epoch, model, train_dataloader, optimizer)
+            print(f'Epoch {epoch} started...')
+            avg_loss = train_epoch(model, train_dataloader, optimizer, opt.device)
             wandb.log({"loss": avg_loss})
-            f1_score = score_model(model, val_dataloader)
+            f1_score = score_model(model, val_dataloader, opt.device)
             wandb.log({'val_f1': f1_score})
             torch.save(model, join(opt.checkpoint_dir,
                        f'epoch{epoch}_f1={round(f1_score, 5)}.pth'))
         # create card
         create_card(config, f1_score)
+        # save model
+        torch.save(model, join(opt.checkpoint_dir, 'weights', 'latest', 'model.pth'))
+        art = wandb.Artifact(f'uwg-garbage-classifier-{wandb.run.id}', type="model")
+        art.add_file(join(opt.checkpoint_dir, 'weights', 'latest', 'model.pth'), "model.pth")
+        art.add_file("garbage_classifier/README.md", "README.md")
+        wandb.log({"loss": avg_loss, "f1_score": f1_score})
+        wandb.log_artifact(art)
 
 
 def get_sweep_config():
@@ -149,6 +85,7 @@ def get_sweep_config():
         }
     }
 
+
 def create_card(config, f1_score):
     model_name = "UWG Garbage Classifier"
     model_description = f"This UWG Garbage Classifier is an image classification model that distinguishes different types of garbage for special [UWG](https://nowaste.com.ua) stations. It is built on the top of the [BEiT](https://huggingface.co/microsoft/beit-base-patch16-224-pt22k-ft22k) model from the transformers library, which is used as encoder. The model is fine-tuned with a custom linear classifier. Fully connected layer size={config.fc_layer_size} and dropout rate={config.dropout} are used."
@@ -170,8 +107,9 @@ def create_card(config, f1_score):
         limitations
     )
 
-    filename = "garbage-classifier/README.md"
+    filename = "garbage_classifier/README.md"
     save_model_card(filename, model_card)
+
 
 if __name__ == '__main__':
     sweep_id = wandb.sweep(get_sweep_config(), project="garbage-classifier")
