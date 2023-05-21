@@ -129,5 +129,6 @@ dmypy.json
 .pyre/
 .vscode/
 data/kaggle-ds/
-pandas-benchmarks/result.txt
 model/model.pth
+model/checkpoints
+wandb/
