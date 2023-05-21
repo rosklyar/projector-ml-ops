@@ -15,43 +15,43 @@ def garbage_classifier_traininig_pipeline(s3_access_key, s3_secret_key, s3_bucke
     load_data = dsl.ContainerOp(
         name="load_data",
         command=["python", "garbage_classifier/cli.py", "load-train-data",
-                 s3_access_key, s3_secret_key, s3_bucket, s3_prefix],
+                 s3_access_key, s3_secret_key, s3_bucket, s3_prefix, "/tmp/data/"],
         image=IMAGE,
-        file_outputs={"train": "data/real-ds/train.tar.gz",
-                      "test": "data/real-ds/test.tar.gz"},
+        file_outputs={"train": "/tmp/data/train.tar.gz",
+                      "test": "/tmp/data/test.tar.gz"},
     )
     load_data.execution_options.caching_strategy.max_cache_staleness = "P0D"
 
     train_model = dsl.ContainerOp(
         name="train",
         command=["python", "garbage_classifier/cli.py",
-                 "train", "garbage_classisier/data/config.json"],
+                 "train", "garbage_classisier/data/config.json", "/tmp/data/train.tar.gz", "/tmp/data/test.tar.gz"],
         image=IMAGE,
         artifact_argument_paths=[
             dsl.InputArgumentPath(
-                load_data.outputs["train"], path="data/real-ds/train.tar.gz"),
+                load_data.outputs["train"], path="/tmp/data/train.tar.gz"),
             dsl.InputArgumentPath(
-                load_data.outputs["test"], path="data/real-ds/test.tar.gz")
+                load_data.outputs["test"], path="/tmp/data/test.tar.gz")
         ],
         file_outputs={
-            "config": "data/config.json",
-            "model": "model/model.pth",
-            "model_card": "data/real-ds/README.md",
+            "config": "/tmp/model/config.json",
+            "model": "/tmp/model/model.pth",
+            "model_card": "/tmp/model/README.md",
         },
     )
 
     upload_model = dsl.ContainerOp(
-        name="upload_model ",
+        name="upload_model",
         command=["python", "garbage_classifier/cli.py",
-                 "upload-to-registry", "garbage-classifier-kf", "tmp/results"],
+                 "upload-to-registry", "garbage-classifier-kf", "/tmp/model"],
         image=IMAGE,
         artifact_argument_paths=[
             dsl.InputArgumentPath(
-                train_model.outputs["config"], path="tmp/results/config.json"),
+                train_model.outputs["config"], path="/tmp/model/config.json"),
             dsl.InputArgumentPath(
-                train_model.outputs["model"], path="tmp/results/model.pth"),
+                train_model.outputs["model"], path="/tmp/model/model.pth"),
             dsl.InputArgumentPath(
-                train_model.outputs["model_card"], path="tmp/results/README.md"),
+                train_model.outputs["model_card"], path="/tmp/model/README.md"),
         ],
     )
 
@@ -69,9 +69,9 @@ def garbage_classifier_inference_pipeline(s3_access_key, s3_secret_key, s3_bucke
     load_data = dsl.ContainerOp(
         name="load_data",
         command=["python", "garbage_classifier/cli.py", "load-data",
-                 s3_access_key, s3_secret_key, s3_bucket, s3_prefix],
+                 s3_access_key, s3_secret_key, s3_bucket, s3_prefix, "/tmp/data/"],
         image=IMAGE,
-        file_outputs={"data": "data/data.tar.gz"},
+        file_outputs={"data": "/tmp/data/data.tar.gz"},
     )
     load_data.execution_options.caching_strategy.max_cache_staleness = "P0D"
 
@@ -81,7 +81,7 @@ def garbage_classifier_inference_pipeline(s3_access_key, s3_secret_key, s3_bucke
                  "download-from-registry", model_name, model_version],
         image=IMAGE,
         file_outputs={
-            "model": "artifacts/uwg-garbage-classifier-ruzqtilr-v0/model.pth"
+            "model": f"/tmp/artifacts/{model_name}-{model_version}/model.pth"
         },
     )
 
@@ -92,18 +92,18 @@ def garbage_classifier_inference_pipeline(s3_access_key, s3_secret_key, s3_bucke
     download_model = download_model.add_env_variable(env_var_password)
 
     inference = dsl.ContainerOp(
-        name="upload_model",
+        name="inference",
         command=["python", "garbage_classifier/cli.py",
-                 "make-inference", "model/model.pth", "data/data.tar.gz"],
+                 "make-inference", f"/tmp/artifacts/{model_name}-{model_version}/model.pth", "/tmp/data/data.tar.gz"],
         image=IMAGE,
         artifact_argument_paths=[
             dsl.InputArgumentPath(
-                load_data.outputs["data"], path="data/data.tar.gz"),
+                load_data.outputs["data"], path="/tmp/data/data.tar.gz"),
             dsl.InputArgumentPath(
                 download_model.outputs["model"], path="model/model.pth")
         ],
         file_outputs={
-            "result": "result.csv"
+            "result": "/tmp/result.csv"
         },
     )
 
