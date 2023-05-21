@@ -27,7 +27,7 @@ def train_model(config=None):
         val_dataloader = garbage_data.get_val_loader()
 
         # model
-        model = get_model(config.dropout, config.fc_layer_size, opt.classes)
+        model = get_model('microsoft/beit-base-patch16-224-pt22k-ft22k', config.dropout, config.fc_layer_size, opt.classes)
         model.to(opt.device)
 
         # optimizer

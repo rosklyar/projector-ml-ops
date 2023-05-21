@@ -5,7 +5,7 @@ from garbage_classifier import garbage_data as gd
 
 
 @pytest.mark.parametrize("input_size", [(3, 256, 256), (3, 512, 512), (3, 1024, 1024), (3, 640, 480)])
-def test_feature_extractor(input_size):
+def test_feature_extractor_output_shape(input_size):
     feature_extractor = gd.FeatureExtractor(
         'microsoft/beit-base-patch16-224-pt22k-ft22k')
     assert feature_extractor is not None
@@ -14,7 +14,7 @@ def test_feature_extractor(input_size):
     assert features['pixel_values'].shape == torch.Size([1, 3, 224, 224])
 
 
-def test_garbage_data():
+def test_dataset_split_routine():
     batch_size = 2
     dataset_length = 10
     val_split = 0.2
