@@ -15,9 +15,7 @@
 1. Add needed environment variables for your Dags:
  - `airflow variables set s3_access_key S3_ACCESS_KEY`
  - `airflow variables set s3_secret_key S3_SECRET_KEY`
- - `airflow variables set s3_bucket S3_BUCKET`
- - `airflow variables set s3_prefix S3_PREFIX`
  - `airflow variables set wandb_api_key WANDB_API_KEY`
 2. Add your dags to the $AIRFLOW_HOME/dags folder
 3. Navigate to localhost:8080 and enable your dags
-4. Run your dags
+4. Run your dags with input parameters

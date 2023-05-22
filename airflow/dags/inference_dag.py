@@ -6,13 +6,13 @@ from kubernetes.client import models as k8s
 from airflow.models import Variable
 from airflow.models.param import Param
 
-volume = k8s.V1Volume(name="training-storage",
-                      persistent_volume_claim=k8s.V1PersistentVolumeClaimVolumeSource(claim_name="training-storage"),)
+volume = k8s.V1Volume(name="inference-storage",
+                      persistent_volume_claim=k8s.V1PersistentVolumeClaimVolumeSource(claim_name="inference-storage"),)
 volume_mount = k8s.V1VolumeMount(
-    name="training-storage", mount_path="/var/tmp/", sub_path=None)
+    name="inference-storage", mount_path="/var/tmp/", sub_path=None)
 IMAGE = "rostyslavskliar/garbage-classifier-trainer:latest"
 
-with DAG(start_date=datetime(2023, 1, 1), params={"bucket": Param("nowastecomua", type="string"), "folder": Param("test", type="string")}, catchup=False, schedule_interval=None, dag_id="training_dag") as dag:
+with DAG(start_date=datetime(2023, 1, 1), params={"bucket": Param("nowastecomua", type="string"), "folder": Param("test", type="string"),  "model_name": Param("garbage-classifier-model", type="string"),  "version": Param("v0", type="string")}, catchup=False, schedule_interval=None, dag_id="training_dag") as dag:
     s3_access_key = Variable.get("s3_access_key")
     s3_secret_key = Variable.get("s3_secret_key")
     wandb_api_key = Variable.get("wandb_api_key")
@@ -31,33 +31,36 @@ with DAG(start_date=datetime(2023, 1, 1), params={"bucket": Param("nowastecomua"
     load_data = KubernetesPodOperator(
         name="load_data",
         image=IMAGE,
-        cmds=["python", "garbage_classifier/cli.py", "load-train-data",
-              s3_access_key, s3_secret_key, dag.params["bucket"], dag.params["folder"], "/var/tmp/data/"],
+        cmds=["python", "garbage_classifier/cli.py", "load-data",
+                 s3_access_key, s3_secret_key, dag.params["bucket"], dag.params["folder"], "/var/tmp/data/"],
         task_id="load_data",
         in_cluster=False,
         namespace="default",
         volumes=[volume],
         volume_mounts=[volume_mount],
     )
+    
+    model_name = dag.params["model_name"]
+    model_version = dag.params["version"]
 
-    train_model = KubernetesPodOperator(
-        name="train_model",
+    download_model = KubernetesPodOperator(
+        name="download_model",
         image=IMAGE,
         cmds=["python", "garbage_classifier/cli.py",
-              "train", "garbage_classifier/data/config.json", "/var/tmp/data/train.tar.gz", "/var/tmp/data/test.tar.gz", "/var/tmp/model/"],
-        task_id="train_model",
+                 "download-from-registry", model_name, model_version],
+        task_id="download_model",
         in_cluster=False,
         namespace="default",
         volumes=[volume],
         volume_mounts=[volume_mount],
     )
 
-    upload_model = KubernetesPodOperator(
-        name="upload_model",
+    inference = KubernetesPodOperator(
+        name="inference",
         image=IMAGE,
         cmds=["python", "garbage_classifier/cli.py",
-              "upload-to-registry", "garbage-classifier-model", "/var/tmp/model/", "/var/tmp/data/input/config.json"],
-        task_id="upload_model",
+                 "make-inference", f"/artifacts/{model_name}-{model_version}/model.pth", "/var/tmp/data/data.tar.gz"],
+        task_id="inference",
         in_cluster=False,
         namespace="default",
         volumes=[volume],
@@ -76,4 +79,9 @@ with DAG(start_date=datetime(2023, 1, 1), params={"bucket": Param("nowastecomua"
         trigger_rule="all_done",
     )
 
-    clean_storage_before_start >> load_data >> train_model >> upload_model >> clean_up
+    clean_storage_before_start >> load_data
+    clean_storage_before_start >> download_model
+
+    load_data >> inference
+    download_model >> inference
+    inference >> clean_up

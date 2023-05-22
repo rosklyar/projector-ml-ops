@@ -4,6 +4,5 @@
     "learning_rate" : 0.008,
     "optimizer" : "sgd",
     "fc_layer_size" : 512,
-    "dropout" : 0.1,
-    "model_dir" : "/var/tmp/data/model"
+    "dropout" : 0.1
   }
