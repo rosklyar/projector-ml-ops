@@ -49,8 +49,8 @@ class GarbageData():
             self.feature_extractor])
         self.train_data = ImageFolder(self.train_path)
         self.test_data = ImageFolder(self.test_path)
-        self._train_loader = DataLoader(LazyDataset(self.train_data, data_transform_train), batch_size=self.batch_size, shuffle=True, num_workers=4)
-        self._test_loader = DataLoader(LazyDataset(self.test_data, transforms.Compose([self.feature_extractor])), batch_size=self.batch_size, shuffle=False, num_workers=4)
+        self._train_loader = DataLoader(LazyDataset(self.train_data, data_transform_train), batch_size=self.batch_size, shuffle=True, num_workers=0)
+        self._test_loader = DataLoader(LazyDataset(self.test_data, transforms.Compose([self.feature_extractor])), batch_size=self.batch_size, shuffle=False, num_workers=0)
 
     def get_train_loader(self):
         return self._train_loader

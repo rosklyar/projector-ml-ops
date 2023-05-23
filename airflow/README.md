@@ -4,7 +4,8 @@
 1. Setup using this [guide](https://www.freecodecamp.org/news/install-apache-airflow-on-windows-without-docker/).
 2. Create db `airflow db init`
 3. Add admin user: `airflow users create --username admin --firstname FIRST_NAME --lastname LAST_NAME --role Admin --email admin@example.com`
-4. Start scheduler and webserver: `airflow scheduler` and `airflow webserver`
+4. Install KubernetesPodOperator with pip `pip install pip install apache-airflow-providers-cncf-kubernetes`
+5. Start scheduler and webserver: `airflow scheduler` and `airflow webserver`
 
 ## Kubernetes connect
 1. Go to localhost:8080 and login with created admin user.

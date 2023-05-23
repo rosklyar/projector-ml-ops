@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Workflow
 metadata:
   generateName: garbage-classifier-traininig-pipeline-
-  annotations: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.21, pipelines.kubeflow.org/pipeline_compilation_time: '2023-05-17T19:55:22.295399',
+  annotations: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.21, pipelines.kubeflow.org/pipeline_compilation_time: '2023-05-23T12:07:49.805255',
     pipelines.kubeflow.org/pipeline_spec: '{"description": "Pipeline for training
       garbage classifier from scratch", "inputs": [{"name": "s3_access_key"}, {"name":
       "s3_secret_key"}, {"name": "s3_bucket"}, {"name": "s3_prefix"}, {"name": "wandb_api_key"}],
@@ -40,19 +40,19 @@ spec:
           - {name: load-data-train, from: '{{tasks.load-data.outputs.artifacts.load-data-train}}'}
       - name: upload-model
         template: upload-model
-        dependencies: [train]
+        dependencies: [load-data, train]
         arguments:
           parameters:
           - {name: wandb_api_key, value: '{{inputs.parameters.wandb_api_key}}'}
           artifacts:
-          - {name: train-config, from: '{{tasks.train.outputs.artifacts.train-config}}'}
+          - {name: load-data-classes, from: '{{tasks.load-data.outputs.artifacts.load-data-classes}}'}
           - {name: train-model, from: '{{tasks.train.outputs.artifacts.train-model}}'}
           - {name: train-model_card, from: '{{tasks.train.outputs.artifacts.train-model_card}}'}
   - name: load-data
     container:
       command: [python, garbage_classifier/cli.py, load-train-data, '{{inputs.parameters.s3_access_key}}',
         '{{inputs.parameters.s3_secret_key}}', '{{inputs.parameters.s3_bucket}}',
-        '{{inputs.parameters.s3_prefix}}']
+        '{{inputs.parameters.s3_prefix}}', /tmp/data/]
       image: rostyslavskliar/garbage-classifier-trainer:latest
     inputs:
       parameters:
@@ -62,8 +62,9 @@ spec:
       - {name: s3_secret_key}
     outputs:
       artifacts:
-      - {name: load-data-test, path: data/real-ds/test.tar.gz}
-      - {name: load-data-train, path: data/real-ds/train.tar.gz}
+      - {name: load-data-classes, path: /tmp/data/input/config.json}
+      - {name: load-data-test, path: /tmp/data/test.tar.gz}
+      - {name: load-data-train, path: /tmp/data/train.tar.gz}
     metadata:
       labels:
         pipelines.kubeflow.org/kfp_sdk_version: 1.8.21
@@ -72,7 +73,8 @@ spec:
       annotations: {pipelines.kubeflow.org/max_cache_staleness: P0D}
   - name: train
     container:
-      command: [python, garbage_classifier/cli.py, train, garbage_classisier/data/config.json]
+      command: [python, garbage_classifier/cli.py, train, garbage_classifier/data/config.json,
+        /tmp/data/train.tar.gz, /tmp/data/test.tar.gz, /tmp/model/]
       env:
       - {name: WANDB_PROJECT, value: garbage-classifier}
       - {name: WANDB_API_KEY, value: '{{inputs.parameters.wandb_api_key}}'}
@@ -81,13 +83,12 @@ spec:
       parameters:
       - {name: wandb_api_key}
       artifacts:
-      - {name: load-data-train, path: data/real-ds/train.tar.gz}
-      - {name: load-data-test, path: data/real-ds/test.tar.gz}
+      - {name: load-data-train, path: /tmp/data/train.tar.gz}
+      - {name: load-data-test, path: /tmp/data/test.tar.gz}
     outputs:
       artifacts:
-      - {name: train-config, path: data/config.json}
-      - {name: train-model, path: model/model.pth}
-      - {name: train-model_card, path: data/real-ds/README.md}
+      - {name: train-model, path: /tmp/model/model.pth}
+      - {name: train-model_card, path: /tmp/model/card.md}
     metadata:
       labels:
         pipelines.kubeflow.org/kfp_sdk_version: 1.8.21
@@ -95,8 +96,8 @@ spec:
         pipelines.kubeflow.org/enable_caching: "true"
   - name: upload-model
     container:
-      command: [python, garbage_classifier/cli.py, upload-to-registry, garbage-classifier-kf,
-        tmp/results]
+      command: [python, garbage_classifier/cli.py, upload-to-registry, uwg-classifier,
+        /tmp/model/, /tmp/model/config.json]
       env:
       - {name: WANDB_PROJECT, value: garbage-classifier}
       - {name: WANDB_API_KEY, value: '{{inputs.parameters.wandb_api_key}}'}
@@ -105,9 +106,9 @@ spec:
       parameters:
       - {name: wandb_api_key}
       artifacts:
-      - {name: train-config, path: tmp/results/config.json}
-      - {name: train-model, path: tmp/results/model.pth}
-      - {name: train-model_card, path: tmp/results/README.md}
+      - {name: load-data-classes, path: /tmp/model/config.json}
+      - {name: train-model, path: /tmp/model/model.pth}
+      - {name: train-model_card, path: /tmp/model/card.md}
     metadata:
       labels:
         pipelines.kubeflow.org/kfp_sdk_version: 1.8.21

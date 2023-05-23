@@ -26,7 +26,7 @@ def garbage_classifier_traininig_pipeline(s3_access_key, s3_secret_key, s3_bucke
     train_model = dsl.ContainerOp(
         name="train",
         command=["python", "garbage_classifier/cli.py",
-                 "train", "garbage_classisier/data/config.json", "/tmp/data/train.tar.gz", "/tmp/data/test.tar.gz", "/tmp/model/"],
+                 "train", "garbage_classifier/data/config.json", "/tmp/data/train.tar.gz", "/tmp/data/test.tar.gz", "/tmp/model/"],
         image=IMAGE,
         artifact_argument_paths=[
             dsl.InputArgumentPath(
@@ -66,7 +66,7 @@ def garbage_classifier_traininig_pipeline(s3_access_key, s3_secret_key, s3_bucke
 
 
 @dsl.pipeline(name="garbage_classifier_inference_pipeline", description="Pipeline for inference data with garbage classifier")
-def garbage_classifier_inference_pipeline(s3_access_key, s3_secret_key, s3_bucket, s3_prefix, wandb_api_key, model_name, model_version):
+def garbage_classifier_inference_pipeline(s3_access_key, s3_secret_key, s3_bucket, s3_prefix, wandb_api_key, model_name: str = 'uwg-classifier', model_version: str = 'v0'):
 
     load_data = dsl.ContainerOp(
         name="load_data",
@@ -83,7 +83,7 @@ def garbage_classifier_inference_pipeline(s3_access_key, s3_secret_key, s3_bucke
                  "download-from-registry", model_name, model_version],
         image=IMAGE,
         file_outputs={
-            "model": f"/artifacts/{model_name}-{model_version}/model.pth"
+            "model": f'/artifacts/{model_name.value}-{model_version.value}/model.pth'
         },
     )
 
