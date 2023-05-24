@@ -9,11 +9,12 @@ from model_utils import get_model, score_model
 from trainer import get_optimizer, train_epoch
 from model_card import create_model_card, save_model_card
 
+
 def train(config_path: Path, train_path, test_path, output_dir):
     # load config
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     json_config = load(config_path.open())
-    
+
     # wandb
     wandb.init(project="garbage-classifier")
 
@@ -26,15 +27,15 @@ def train(config_path: Path, train_path, test_path, output_dir):
 
     # model
     classes = len(os.listdir(train_path))
-    model = get_model(
-        json_config['dropout'], json_config['fc_layer_size'], classes)
+    model = get_model(json_config['encoder'],
+                      json_config['dropout'], json_config['fc_layer_size'], classes)
     model.to(device)
 
     # optimizer
     optimizer = get_optimizer(
         model, json_config['optimizer'], json_config['learning_rate'])
-    
-    # training loop 
+
+    # training loop
     f1_score = 0
     avg_loss = 0
     for epoch in range(json_config['epochs']):
@@ -49,7 +50,9 @@ def train(config_path: Path, train_path, test_path, output_dir):
     torch.save(model, os.path.join(output_dir, 'model.pth'))
     print(f"Model saved as {os.path.join(output_dir, 'model.pth')}")
     # create card
-    _create_card(json_config['optimizer'], json_config['learning_rate'], json_config['batch_size'], json_config['epochs'], json_config['fc_layer_size'], json_config['dropout'], f1_score, Path(output_dir) / 'card.md')
+    _create_card(json_config['optimizer'], json_config['learning_rate'], json_config['batch_size'], json_config['epochs'],
+                 json_config['fc_layer_size'], json_config['dropout'], f1_score, Path(output_dir) / 'card.md')
+
 
 def _create_card(optimizer, learning_rate, batch_size, epochs, fc_layer_size, dropout, f1_score, path):
     model_name = "UWG Garbage Classifier"

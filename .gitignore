@@ -138,3 +138,5 @@ wandb/
 test.tar.gz
 train.tar.gz
 .idea/
+tmp/
+artifacts/
