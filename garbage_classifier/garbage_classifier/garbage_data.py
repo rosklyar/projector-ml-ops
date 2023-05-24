@@ -122,11 +122,11 @@ def _download_files_from_s3_bucket_folder(s3, bucket_name, folder_path, local_de
 def extract_tar_gz(archive_path):
     if not os.path.exists(archive_path):
         print(f"The file '{archive_path}' does not exist.")
-        return None
+        return
 
     if not tarfile.is_tarfile(archive_path):
         print(f"The file '{archive_path}' is not a valid tar archive.")
-        return None
+        return
 
     # Create a unique directory for the extracted files
     extracted_folder = os.path.splitext(
@@ -143,7 +143,12 @@ def extract_tar_gz(archive_path):
             print(
                 f"Successfully extracted '{archive_path}' to '{extracted_path}'.")
             return extracted_path
+    except tarfile.ReadError as e:
+        print(f"Error reading the archive '{archive_path}': {e}")
+    except tarfile.ExtractError as e:
+        print(f"Error extracting the archive '{archive_path}': {e}")
+    except tarfile.TarError as e:
+        print(f"Error handling the archive '{archive_path}': {e}")
     except Exception as e:
-        print(f"Error while extracting '{archive_path}': {e}")
-        return None
-    
+        print(f"An unexpected error occurred while extracting '{archive_path}': {e}")
+        
