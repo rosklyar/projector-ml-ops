@@ -1,4 +1,11 @@
-fastapi==0.95.1
-pydantic==1.10.7
-uvicorn==0.21.1
-python-multipart==0.0.6
+fastapi==0.95.2
+filelock==3.8.0
+Pillow==9.5.0
+pytest==7.3.1
+pytest-env==0.8.1
+streamlit==1.22.0
+torch==1.13.1
+transformers==4.17.0
+wandb==0.15.1
+httpx==0.23.3
+python-multipart==0.0.5
