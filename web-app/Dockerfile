@@ -1,11 +1,23 @@
-FROM python:3.9
- 
-WORKDIR /garbage-classifier
+FROM python:3.9-slim-buster as base
 
-COPY ./requirements.txt /garbage-classifier/requirements.txt
+WORKDIR /app
 
-RUN pip install --no-cache-dir --upgrade -r /garbage-classifier/requirements.txt
+COPY ./requirements.txt /app/requirements.txt
 
-COPY ./source /garbage-classifier/source
- 
-CMD ["uvicorn", "source.main:app", "--host", "0.0.0.0", "--port", "80"]
+RUN pip install --no-cache-dir --upgrade -r /app/requirements.txt
+
+RUN ln -s /usr/bin/python3 /usr/bin/python
+
+ENV PYTHONPATH /app
+COPY ./serving /app/serving 
+
+CMD [ "bash" ]
+
+# Streamlit UI docker image
+FROM base AS uwg-app-streamlit
+CMD streamlit run --server.address 0.0.0.0 --server.port 8080 serving/ui_app.py
+
+
+# Fast API docker image
+FROM base AS uwg-app-fastapi
+CMD uvicorn --host 0.0.0.0 --port 8080 --workers 4 serving.fast_api:app

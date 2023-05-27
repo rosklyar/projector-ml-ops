@@ -7,7 +7,7 @@ from serving.predictor import Predictor
 
 @st.cache(hash_funcs={Predictor: lambda _: None})
 def get_model() -> Predictor:
-    return Predictor.default_from_model_registry(os.getenv("MODEL_ID"))
+    return Predictor.default_from_model_registry(os.getenv("MODEL_ID"), os.getenv("MODEL_PATH"))
 
 
 predictor = get_model()
