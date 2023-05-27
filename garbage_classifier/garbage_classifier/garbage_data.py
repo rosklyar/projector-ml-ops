@@ -49,28 +49,28 @@ class GarbageData():
             self.feature_extractor])
         self.train_data = ImageFolder(self.train_path)
         self.test_data = ImageFolder(self.test_path)
-        self._train_loader = DataLoader(LazyDataset(self.train_data, data_transform_train), batch_size=self.batch_size, shuffle=True, num_workers=4)
-        self._test_loader = DataLoader(LazyDataset(self.test_data, transforms.Compose([self.feature_extractor])), batch_size=self.batch_size, shuffle=False, num_workers=4)
+        self._train_loader = DataLoader(LazyDataset(self.train_data, data_transform_train), batch_size=self.batch_size, shuffle=True, num_workers=0)
+        self._test_loader = DataLoader(LazyDataset(self.test_data, transforms.Compose([self.feature_extractor])), batch_size=self.batch_size, shuffle=False, num_workers=0)
 
     def get_train_loader(self):
         return self._train_loader
 
     def get_test_loader(self):
         return self._test_loader
-    
-def load_train_data(s3_access_key, s3_secret_key, s3_bucket, s3_prefix):
+
+def load_train_data(s3_access_key, s3_secret_key, s3_bucket, s3_prefix, folder):
     s3_client = boto3.client('s3', aws_access_key_id=s3_access_key, aws_secret_access_key=s3_secret_key)
-    folder = 'data/real-ds'
     _download_files_from_s3_bucket_folder(s3_client, s3_bucket, s3_prefix, f'{folder}/input')
     _create_train_test_split(f'{folder}/input', f'{folder}/train', f'{folder}/test')
-    _create_tar_gz_folder(f'{folder}/train', 'data/real-ds/train.tar.gz')
-    _create_tar_gz_folder(f'{folder}/test', 'data/real-ds/test.tar.gz')
+    _create_tar_gz_folder(f'{folder}/train', f'{folder}/train.tar.gz')
+    _create_tar_gz_folder(f'{folder}/test', f'{folder}/test.tar.gz')
+    print(f'Created {folder}/train.tar.gz')
+    print(f'Created {folder}/test.tar.gz')
 
-def load_data(s3_access_key, s3_secret_key, s3_bucket, s3_prefix):
+def load_data(s3_access_key, s3_secret_key, s3_bucket, s3_prefix, folder):
     s3_client = boto3.client('s3', aws_access_key_id=s3_access_key, aws_secret_access_key=s3_secret_key)
-    folder = 'data/tmp'
     _download_files_from_s3_bucket_folder(s3_client, s3_bucket, s3_prefix, f'{folder}')
-    _create_tar_gz_folder(f'{folder}', 'data/data.tar.gz')
+    _create_tar_gz_folder(f'{folder}', f'{folder}/data.tar.gz')
     
 def _create_train_test_split(src_folder, train_folder, test_folder):
     class_folders = [f for f in os.listdir(src_folder) if os.path.isdir(os.path.join(src_folder, f))]
@@ -102,6 +102,14 @@ def _create_tar_gz_folder(src_folder, output_filename):
             if entry.is_dir():
                 arcname = os.path.basename(entry.path)
                 tar.add(entry.path, arcname=arcname)
+        print(f'Created!!! {output_filename}')
+    try:
+        tar = tarfile.open(output_filename, "r:gz")
+        print(f'Tar length: {len(tar.getnames())}')
+        if not tarfile.is_tarfile(output_filename):
+            raise Exception(f'Error while creating {output_filename}')
+    except Exception as e:
+        print(f'Error while creating {output_filename}: {e}')
 
 
 def _download_files_from_s3_bucket_folder(s3, bucket_name, folder_path, local_destination):
@@ -151,4 +159,3 @@ def extract_tar_gz(archive_path):
         print(f"Error handling the archive '{archive_path}': {e}")
     except Exception as e:
         print(f"An unexpected error occurred while extracting '{archive_path}': {e}")
-        

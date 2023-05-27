@@ -9,32 +9,33 @@ from model_utils import get_model, score_model
 from trainer import get_optimizer, train_epoch
 from model_card import create_model_card, save_model_card
 
-def train(config_path: Path):
+
+def train(config_path: Path, train_path, test_path, output_dir):
     # load config
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     json_config = load(config_path.open())
-    
+
     # wandb
     wandb.init(project="garbage-classifier")
 
     # data
-    train_path = extract_tar_gz(Path(json_config['train_path']))
+    train_path = extract_tar_gz(Path(train_path))
     garbage_data = GarbageData(train_path, extract_tar_gz(
-        Path(json_config['test_path'])), json_config['batch_size'])
+        Path(test_path)), json_config['batch_size'])
     train_dataloader = garbage_data.get_train_loader()
     val_dataloader = garbage_data.get_test_loader()
 
     # model
     classes = len(os.listdir(train_path))
-    model = get_model(
-        json_config['dropout'], json_config['fc_layer_size'], classes)
+    model = get_model(json_config['encoder'],
+                      json_config['dropout'], json_config['fc_layer_size'], classes)
     model.to(device)
 
     # optimizer
     optimizer = get_optimizer(
         model, json_config['optimizer'], json_config['learning_rate'])
-    
-    # training loop 
+
+    # training loop
     f1_score = 0
     avg_loss = 0
     for epoch in range(json_config['epochs']):
@@ -44,13 +45,16 @@ def train(config_path: Path):
         f1_score = score_model(model, val_dataloader, device)
         wandb.log({'val_f1': f1_score})
 
+    os.makedirs(output_dir, exist_ok=True)
     # save model
-    torch.save(model, Path(json_config['model_dir']) / 'model.pth')
-
+    torch.save(model, os.path.join(output_dir, 'model.pth'))
+    print(f"Model saved as {os.path.join(output_dir, 'model.pth')}")
     # create card
-    _create_card(json_config['optimizer'], json_config['learning_rate'], json_config['batch_size'], json_config['epochs'], json_config['fc_layer_size'], json_config['dropout'], f1_score)
+    _create_card(json_config['optimizer'], json_config['learning_rate'], json_config['batch_size'], json_config['epochs'],
+                 json_config['fc_layer_size'], json_config['dropout'], f1_score, Path(output_dir) / 'card.md')
 
-def _create_card(optimizer, learning_rate, batch_size, epochs, fc_layer_size, dropout, f1_score):
+
+def _create_card(optimizer, learning_rate, batch_size, epochs, fc_layer_size, dropout, f1_score, path):
     model_name = "UWG Garbage Classifier"
     model_description = f"This UWG Garbage Classifier is an image classification model that distinguishes different types of garbage for special [UWG](https://nowaste.com.ua) stations. It is built on the top of the [BEiT](https://huggingface.co/microsoft/beit-base-patch16-224-pt22k-ft22k) model from the transformers library, which is used as encoder. The model is fine-tuned with a custom linear classifier. Fully connected layer size={fc_layer_size} and dropout rate={dropout} are used."
     data_details = "The dataset used for training and validation is [Kaggle Garbage Classification](https://www.kaggle.com/datasets/mostafaabla/garbage-classification). This dataset has 15,150 images from 12 different classes of household garbage; paper, cardboard, biological, metal, plastic, green-glass, brown-glass, white-glass, clothes, shoes, batteries, and trash."
@@ -71,5 +75,5 @@ def _create_card(optimizer, learning_rate, batch_size, epochs, fc_layer_size, dr
         limitations
     )
 
-    filename = "data/real-ds/README.md"
-    save_model_card(filename, model_card)
+    save_model_card(path, model_card)
+    print(f"Model Card saved as {path}")

@@ -1,12 +1,12 @@
 import wandb
 from pathlib import Path
 
-def upload_to_registry(model_name: str, model_path: Path):
-    with wandb.init() as _:
+def upload_to_registry(model_name: str, model_path: Path, classes_json: Path):
+    with wandb.init(project="garbage-classifier", entity="rosklyar") as _:
         art = wandb.Artifact(model_name, type="model")
-        art.add_file(model_path / "config.json")
+        art.add_file(classes_json)
         art.add_file(model_path / "model.pth")
-        art.add_file(model_path / "README.md")
+        art.add_file(model_path / "card.md")
         wandb.log_artifact(art)
 
 def download_from_registry(artifact_name, artifact_version):

@@ -1,11 +1,9 @@
 {
-    "train_path": "data/real-ds/train.tar.gz",
-    "test_path": "data/real-ds/test.tar.gz",
-    "batch_size" : 16,
-    "epochs" : 1,
-    "learning_rate" : 0.008,
-    "optimizer" : "sgd",
-    "fc_layer_size" : 512,
-    "dropout" : 0.1,
-    "model_dir" : "model"
-  }
+  "batch_size": 16,
+  "epochs": 1,
+  "learning_rate": 0.008,
+  "optimizer": "sgd",
+  "fc_layer_size": 512,
+  "dropout": 0.1,
+  "encoder" : "microsoft/beit-base-patch16-224-pt22k-ft22k"
+}
