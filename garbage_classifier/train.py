@@ -7,7 +7,7 @@ import wandb
 from garbage_classifier.garbage_data import GarbageData
 from garbage_classifier.config import config as opt
 from garbage_classifier.model_card import create_model_card, save_model_card
-from garbage_classifier.model import get_model, score_model
+from garbage_classifier.model_utils import get_model, score_model
 from garbage_classifier.trainer import get_optimizer, train_epoch
 
 random.seed(42)
@@ -27,7 +27,7 @@ def train_model(config=None):
         val_dataloader = garbage_data.get_val_loader()
 
         # model
-        model = get_model(config.dropout, config.fc_layer_size, opt.classes)
+        model = get_model('microsoft/beit-base-patch16-224-pt22k-ft22k', config.dropout, config.fc_layer_size, opt.classes)
         model.to(opt.device)
 
         # optimizer

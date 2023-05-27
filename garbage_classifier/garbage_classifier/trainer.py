@@ -1,9 +1,7 @@
 from tqdm import tqdm
 import torch
-import wandb
 import torch.nn.functional as F
 from torch.optim import SGD, Adam
-
 
 def get_optimizer(model, optimizer, lr):
     if optimizer == "sgd":
