@@ -16,16 +16,12 @@ def test_feature_extractor_output_shape(input_size):
 
 def test_dataset_split_routine():
     batch_size = 2
-    dataset_length = 10
-    val_split = 0.2
     garbage_data = gd.GarbageData(
-        "garbage_classifier/tests/data", batch_size, val_split)
+        "garbage_classifier/tests/data", "garbage_classifier/tests/data", batch_size)
     assert garbage_data is not None
-    assert len(garbage_data.data) == dataset_length
     train_dataloader = garbage_data.get_train_loader()
     assert train_dataloader is not None
-    assert len(train_dataloader) == dataset_length * \
-        (1 - val_split) / batch_size
-    val_dataloader = garbage_data.get_val_loader()
+    assert len(train_dataloader) == 10 / batch_size
+    val_dataloader = garbage_data.get_test_loader()
     assert val_dataloader is not None
-    assert len(val_dataloader) == dataset_length * val_split / batch_size
+    assert len(val_dataloader) == 10 / batch_size

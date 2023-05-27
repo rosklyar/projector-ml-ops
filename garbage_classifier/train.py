@@ -7,7 +7,7 @@ import wandb
 from garbage_classifier.garbage_data import GarbageData
 from garbage_classifier.config import config as opt
 from garbage_classifier.model_card import create_model_card, save_model_card
-from garbage_classifier.model import get_model, score_model
+from garbage_classifier.model_utils import get_model, score_model
 from garbage_classifier.trainer import get_optimizer, train_epoch
 
 random.seed(42)

@@ -3,7 +3,8 @@ from sklearn.metrics import f1_score as measure_f1_score
 from tqdm import tqdm
 import torch
 
-def get_model(model_name,dropout_rate, fc_layer_size, n_classes):
+
+def get_model(model_name, dropout_rate, fc_layer_size, n_classes):
     model = BeitForImageClassification.from_pretrained(
         model_name)
 
@@ -13,8 +14,9 @@ def get_model(model_name,dropout_rate, fc_layer_size, n_classes):
     model.classifier = torch.nn.Sequential(*layers)
 
     model.config.num_labels = n_classes
-    
+
     return model
+
 
 @torch.no_grad()
 def score_model(model, dataloader, device='cpu'):
