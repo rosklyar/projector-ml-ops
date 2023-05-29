@@ -62,7 +62,7 @@ async def callback(update: Update, context: CallbackContext):
         label = context.chat_data.get('label')
         photo_id = context.chat_data.get('photo_id')
         photo = await context.bot.get_file(photo_id)
-        file_path = str(uuid.uuid4()) + ".jpg"
+        file_path = os.path.join(os.getcwd(), f'{uuid.uuid4()}.jpg')
         await photo.download_to_drive(file_path)
         s3.upload_file(file_path, BUCKET_NAME, f'{ROOT_FOLDER}/{label}/{file_path}')
         await delete_file(file_path)
