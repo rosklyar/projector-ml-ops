@@ -1,5 +1,4 @@
 import os
-import io
 from typing import Dict
 from serving.predictor import Predictor
 from kserve import Model, ModelServer
