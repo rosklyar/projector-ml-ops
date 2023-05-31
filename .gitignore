@@ -140,3 +140,4 @@ train.tar.gz
 .idea/
 tmp/
 artifacts/
+web-app/model_repository/uwg_classifier/latest/model.pth

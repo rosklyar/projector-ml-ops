@@ -1,10 +1,33 @@
-apiVersion: "serving.kserve.io/v1beta1"
-kind: "InferenceService"
+apiVersion: serving.kubeflow.org/v1beta1
+kind: InferenceService
 metadata:
-  name: "sklearn-iris"
+  name: uwg-garbage-classifier
+labels:
+  controller-tools.k8s.io: '1.0'
+  app: uwg-garbage-classifier
+name: uwg-garbage-classifier
 spec:
   predictor:
-    model:
-      modelFormat:
-        name: sklearn
-      storageUri: "gs://kfserving-examples/models/sklearn/1.0/model"
+    containers:
+      - image: "rostyslavskliar/uwg-app-kserve:latest"
+        env:     
+          - name: WANDB_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: env-secrets
+                key: WANDB_API_KEY
+          - name: WANDB_PROJECT
+            value: garbage-classifier
+          - name: MODEL_ID
+            value: uwg-classifier:v1
+          - name: MODEL_PATH
+            value: /tmp/model
+        args:
+          - proteus-server
+          - '--http-port=8080'
+          - '--grpc-port=9000'
+        ports:
+          - containerPort: 8080
+            protocol: TCP
+          - containerPort: 9000
+            protocol: TCP
