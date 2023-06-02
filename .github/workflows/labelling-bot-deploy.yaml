@@ -3,7 +3,7 @@ name: labelling-bot-deploy
 on:
   push:
     branches:
-      - main
+      - deploy-bot/*
     paths:
       - labelling_bot/**
 

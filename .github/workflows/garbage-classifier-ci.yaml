@@ -9,7 +9,7 @@ on:
       - main
 
 env:
-  IMAGE_WEBAPP: garbage-classifier-webapp
+  IMAGE_WEBAPP: uwg-classifier-service
 
 jobs:
   build-and-push-app:
@@ -28,10 +28,11 @@ jobs:
         shell: bash
         run: echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/feature/} | sed 's/\//-/g')" >> $GITHUB_ENV
       - name: Build and push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v4
         with:
           context: web-app/
           file: web-app/Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.IMAGE_WEBAPP }}:${{ env.BRANCH_NAME }}
+          target: uwg-app-fastapi
 

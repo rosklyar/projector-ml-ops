@@ -1,0 +1,44 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: uwg-app-fastapi
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: uwg-app-fastapi
+  template:
+    metadata:
+      labels:
+        app: uwg-app-fastapi
+    spec:
+      containers:
+        - name: uwg-app-fastapi
+          image: rostyslavskliar/uwg-app-fastapi:latest
+          env:
+          - name: WANDB_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: env-secrets
+                key: WANDB_API_KEY
+          - name: WANDB_PROJECT
+            value: garbage-classifier
+          - name: MODEL_ID
+            value: uwg-classifier:v1
+          - name: MODEL_PATH
+            value: /tmp/model
+              
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: uwg-app-fastapi
+  labels:
+    app: uwg-app-fastapi
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+  selector:
+    app: uwg-app-fastapi

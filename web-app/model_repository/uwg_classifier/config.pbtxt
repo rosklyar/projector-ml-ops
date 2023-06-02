@@ -1,0 +1,16 @@
+name: "uwg_classifier"
+platform: "pytorch_libtorch"
+input [
+  {
+    name: "input0"
+    data_type: TYPE_FP32
+    dims: [ -1, 3, 224, 224 ]
+  }
+]
+output [
+  {
+    name: "output0"
+    data_type: TYPE_FP32
+    dims: [ 56 ]
+  }
+]

@@ -4,6 +4,8 @@ RUN useradd --create-home appuser
 
 WORKDIR /home/appuser/labelling_bot
 
+RUN chown -R appuser:appuser /home/appuser/labelling_bot/
+
 USER appuser
 
 COPY ./requirements.txt /home/appuser/labelling_bot/requirements.txt
