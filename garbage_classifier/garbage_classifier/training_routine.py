@@ -8,6 +8,11 @@ from garbage_data import GarbageData, extract_tar_gz
 from model_utils import get_model, score_model
 from trainer import get_optimizer, train_epoch
 from model_card import create_model_card, save_model_card
+from alibi_detect.cd.pytorch import preprocess_drift
+from alibi_detect.utils.saving import save_detector
+from alibi_detect.cd import KSDrift
+from functools import partial
+from alibi_detect.cd.pytorch import HiddenOutput
 
 
 def train(config_path: Path, train_path, test_path, output_dir):
@@ -48,11 +53,22 @@ def train(config_path: Path, train_path, test_path, output_dir):
     os.makedirs(output_dir, exist_ok=True)
     # save model
     torch.save(model, os.path.join(output_dir, 'model.pth'))
+
+    # save drift detector
+    save_drift_detector(model, val_dataloader, output_dir, json_config['batch_size'])
+
     print(f"Model saved as {os.path.join(output_dir, 'model.pth')}")
     # create card
     _create_card(json_config['optimizer'], json_config['learning_rate'], json_config['batch_size'], json_config['epochs'],
                  json_config['fc_layer_size'], json_config['dropout'], f1_score, Path(output_dir) / 'card.md')
 
+
+def save_drift_detector(model, dataloader, output_dir, batch_size):
+    drift_detector = partial(preprocess_drift, model=HiddenOutput(model, layer=-1), batch_size=batch_size)
+    X_ref = torch.cat([data[0]['pixel_values'] for data in dataloader], dim=0)
+    X_ref = torch.squeeze(X_ref).numpy()
+    cd = KSDrift(x_ref=X_ref, preprocess_fn=drift_detector, p_val=.05, alternative='two-sided')
+    save_detector(cd, Path(output_dir) / 'drift_detector')
 
 def _create_card(optimizer, learning_rate, batch_size, epochs, fc_layer_size, dropout, f1_score, path):
     model_name = "UWG Garbage Classifier"

@@ -162,7 +162,7 @@ def garbage_classifier_inference_pipeline(
                 load_data.outputs["data"], path="/tmp/data/data.tar.gz"
             ),
             dsl.InputArgumentPath(
-                download_model.outputs["model"], path="/tmp/model/model.pth"
+                download_model.outputs["model"], path="/tmp/model"
             ),
         ],
         file_outputs={"result": "/tmp/result.csv"},

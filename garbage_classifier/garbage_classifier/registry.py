@@ -7,6 +7,7 @@ def upload_to_registry(model_name: str, model_path: Path, classes_json: Path):
         art.add_file(classes_json)
         art.add_file(model_path / "model.pth")
         art.add_file(model_path / "card.md")
+        art.add_dir(model_path / "drift_detector", name="drift_detector")
         wandb.log_artifact(art)
 
 def download_from_registry(artifact_name, artifact_version):

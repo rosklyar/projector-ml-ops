@@ -3,6 +3,9 @@ from torchvision import torch, transforms
 from torchvision.datasets import ImageFolder
 from torch.utils.data import DataLoader
 from torch.utils.data import random_split
+from pathlib import Path
+from alibi_detect.utils.saving import load_detector
+from timeit import default_timer as timer
 
 from tqdm import tqdm
 import time
@@ -11,6 +14,7 @@ from garbage_data import LazyDataset, FeatureExtractor, extract_tar_gz
 
 BATCH_SIZE = 16
 PROCESS_COUNT = 8
+DRIFT_LABELS = ['No!', 'Yes!']
 
 def load_model(model_path, device='cpu'):
     model = torch.load(model_path, map_location=device)
@@ -52,17 +56,41 @@ def multi_process_prediction(model, feature_extractor, dataset: ImageFolder, pro
         result.extend(future.result())
     return result
 
-def make_inference(model_path, data_archive_path):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = load_model(model_path, device)
-    feature_extractor = FeatureExtractor("microsoft/beit-base-patch16-224-pt22k-ft22k")
+def make_inference(model_path: Path, data_archive_path):
     data_path = extract_tar_gz(data_archive_path)
     dataset = ImageFolder(data_path)
+    feature_extractor = FeatureExtractor("microsoft/beit-base-patch16-224-pt22k-ft22k")
+    
+    # load drift detector
+    cd = load_detector(model_path / "drift_detector")
+    make_drift_predictions(cd, createInputsForDriftDetector(dataset, feature_extractor))
+    
+    # inference
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = load_model(model_path / "model.pth", device)
     paths = [path for path, _ in dataset.imgs]
     multi_process_result = single_process_prediction(model, feature_extractor, dataset, device)
     with open("result.csv", "w") as f:
         for path, label in zip(paths, multi_process_result):
-            f.write(f"{path},{label}\n") 
+            f.write(f"{path},{label}\n")
+
+def make_drift_predictions(cd, x_h0):
+    t = timer()
+    preds = cd.predict(x_h0)
+    dt = timer() - t
+    print('No corruption')
+    print('Drift? {}'.format(DRIFT_LABELS[preds['data']['is_drift']]))
+    print('Feature-wise p-values:')
+    print(preds['data']['p_val'])
+    print(f'Time (s) {dt:.3f}')
+    if preds['data']['is_drift']:
+        raise Exception("Drift detected")
+
+def createInputsForDriftDetector(dataset: ImageFolder, feature_extractor: FeatureExtractor):
+    dataloader = DataLoader(LazyDataset(dataset, transforms.Compose([feature_extractor])), batch_size=BATCH_SIZE, shuffle=False)
+    X_ref = torch.cat([data[0]['pixel_values'] for data in dataloader], dim=0)
+    X_ref = torch.squeeze(X_ref).numpy()
+    return X_ref
 
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

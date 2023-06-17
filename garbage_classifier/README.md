@@ -26,5 +26,5 @@ python .\garbage_classifier\garbage_classifier\cli.py load-data S3_ACCESS_KEY S3
 ```
 3. Make predictions
 ```
-python .\garbage_classifier\garbage_classifier\cli.py make-inference .\artifacts\uwg-classifier-v0\model.pth .\tmp\data\data.tar.gz
+python .\garbage_classifier\garbage_classifier\cli.py make-inference .\artifacts\uwg-classifier-v0 .\tmp\data\data.tar.gz
 ```
