@@ -2,20 +2,29 @@ from transformers import BeitForImageClassification
 from sklearn.metrics import f1_score as measure_f1_score
 from tqdm import tqdm
 import torch
+from torch import nn
 
+class BeitImageClassificationModel(nn.Module):
+    
+    def __init__(self, model_name, dropout_rate, fc_layer_size, n_classes):
+        super().__init__()
+        self.model = BeitForImageClassification.from_pretrained(model_name)
+        self.model.config.num_labels = n_classes
+        self.model.classifier = nn.Sequential(
+            nn.Linear(768, fc_layer_size),
+            nn.Dropout(dropout_rate),
+            nn.Linear(fc_layer_size, n_classes)
+        )
+        self.model_name = model_name
+        self.dropout_rate = dropout_rate
+        self.fc_layer_size = fc_layer_size
+        self.n_classes = n_classes
+
+    def forward(self, x):
+        return self.model(x)
 
 def get_model(model_name, dropout_rate, fc_layer_size, n_classes):
-    model = BeitForImageClassification.from_pretrained(
-        model_name)
-
-    layers = [torch.nn.Linear(768, fc_layer_size), torch.nn.Dropout(
-        dropout_rate), torch.nn.Linear(fc_layer_size, n_classes)]
-
-    model.classifier = torch.nn.Sequential(*layers)
-
-    model.config.num_labels = n_classes
-
-    return model
+    return BeitImageClassificationModel(model_name, dropout_rate, fc_layer_size, n_classes)
 
 
 @torch.no_grad()

@@ -93,7 +93,7 @@ with DAG(
             "python",
             "garbage_classifier/cli.py",
             "make-inference",
-            f"/artifacts/{model_name}-{model_version}/model.pth",
+            f"/artifacts/{model_name}-{model_version}",
             "/var/tmp/data/data.tar.gz",
         ],
         task_id="inference",
